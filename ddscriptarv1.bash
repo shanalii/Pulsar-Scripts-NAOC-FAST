@@ -186,13 +186,18 @@ echo "End time: $END"
 echo "Time for accelsearch: $(($END - $START)) seconds."
 echo -e "*************************************************************\n"
 
-
 #sift through periodic candidates
 echo "*************************************************************"
 echo -e "Running ACCEL_sift.py:"
 START="$(date -u +%s)"
 echo -e "Start time: $START\n"
-python "$PRESTO/python/ACCEL_sift.py" > cands.txt
+
+#in GZNU server, re-direct X11 interface to admin1
+tmp=`echo $DISPLAY`
+export DISPLAY=10.10.10.24:38.0
+python $PRESTO/python/ACCEL_sift.py > cands.txt
+export DISPLAY=$tmp
+#cd $tmp
 echo "Done. Candidate info saved in cands.txt."
 END="$(date -u +%s)"
 echo "End time: $END"
