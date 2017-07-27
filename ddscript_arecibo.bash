@@ -11,7 +11,7 @@
 STARTTIME="$(date -u +%s)"
 
 echo "*************************************************************"
-echo "\textbf{PRESTO} data processing"
+echo "PRESTO data processing"
 echo -e "by Shana Li\n"
 echo "Arguments should be in the format: directory filename."
 echo "Filename should be sans file extension (.fits)."
@@ -104,8 +104,7 @@ echo "Number of Channels: $numchan"
 echo "Total Bandwidth: $bandw"
 echo -e "Sample Time: $sampletime \n"
 
-DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r 
-    $tres -o $filename > ${filename}_ddplaninfo.txt
+DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r $tres -o $filename > ${filename}_ddplaninfo.txt
 echo "Done."
 END="$(date -u +%s)"
 echo "End time: $END"
@@ -156,11 +155,8 @@ do
 	numo=$(( $numout / $ds ))
 	
 	#run prepsubband command
-	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; 
-	    Numout: $numo; Downsample: $ds"
-	prepsubband -nsub $nsub -lodm $ldm -dmstep $dms -numdms $ndm -numout 
-	    $numo -downsamp $ds -mask ${filename}_rfifind.mask -o $filename 
-	    $filename.fits >> /dev/null
+	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; Numout: $numo; Downsample: $ds"
+	prepsubband -nsub $nsub -lodm $ldm -dmstep $dms -numdms $ndm -numout $numo -downsamp $ds -mask ${filename}_rfifind.mask -o $filename $filename.fits >> /dev/null
 	echo -e "Done.\n"
 done
 END="$(date -u +%s)"
@@ -201,7 +197,7 @@ echo -e "Start time: $START\n"
 #in GZNU server, re-direct X11 interface to admin1
 tmp=`echo $DISPLAY`
 export DISPLAY=10.10.10.24:38.0
-python $\textbf{PRESTO}/python/ACCEL_sift.py > cands.txt
+python $PRESTO/python/ACCEL_sift.py > cands.txt
 export DISPLAY=$tmp
 #cd $tmp
 echo "Done. Candidate info saved in cands.txt."
@@ -251,13 +247,10 @@ do
 	datfilename="${accelfilename: 0:$length}"
 
 	#run prepfold command
-	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; 
-	    nsub: $nsub \n"
+	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; nsub: $nsub \n"
 	
 	#fold raw data
-	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.fits 
-	    -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch 
-	    -o ${filename}_${dmsarr[$i]} >> /dev/null
+	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.fits -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch -o ${filename}_${dmsarr[$i]} >> /dev/null
 
 done
 
