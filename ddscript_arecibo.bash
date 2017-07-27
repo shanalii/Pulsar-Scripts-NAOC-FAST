@@ -1,15 +1,17 @@
 #!/bin/bash
-#A script to do de-dispersion on a single file, involving making a link to said file and running rfifind, DDplan.py, prepdata, and realfft on it.
+#A script to process a single file, involving making a link to said file and running 
+#rfifind, DDplan.py, prepdata, realfft, accelsearch, accelsift, and prepfold on it.
 #don't forget to do this on n04 -X! (BJ server)
 #modified for use on the GZNU server.
 
 #command line arguments are in the format: ddscript.bash directory filename
-#boolean to check whether or not everything is in the right format and if the directory and filename are valid
+#boolean to check whether or not everything is in the right format and if the 
+#directory and filename are valid
 
 STARTTIME="$(date -u +%s)"
 
 echo "*************************************************************"
-echo "PRESTO data processing"
+echo "\textbf{PRESTO} data processing"
 echo -e "by Shana Li\n"
 echo "Arguments should be in the format: directory filename."
 echo "Filename should be sans file extension (.fits)."
@@ -102,7 +104,8 @@ echo "Number of Channels: $numchan"
 echo "Total Bandwidth: $bandw"
 echo -e "Sample Time: $sampletime \n"
 
-DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r $tres -o $filename > ${filename}_ddplaninfo.txt
+DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r 
+    $tres -o $filename > ${filename}_ddplaninfo.txt
 echo "Done."
 END="$(date -u +%s)"
 echo "End time: $END"
@@ -153,8 +156,11 @@ do
 	numo=$(( $numout / $ds ))
 	
 	#run prepsubband command
-	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; Numout: $numo; Downsample: $ds"
-	prepsubband -nsub $nsub -lodm $ldm -dmstep $dms -numdms $ndm -numout $numo -downsamp $ds -mask ${filename}_rfifind.mask -o $filename $filename.fits >> /dev/null
+	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; 
+	    Numout: $numo; Downsample: $ds"
+	prepsubband -nsub $nsub -lodm $ldm -dmstep $dms -numdms $ndm -numout 
+	    $numo -downsamp $ds -mask ${filename}_rfifind.mask -o $filename 
+	    $filename.fits >> /dev/null
 	echo -e "Done.\n"
 done
 END="$(date -u +%s)"
@@ -195,7 +201,7 @@ echo -e "Start time: $START\n"
 #in GZNU server, re-direct X11 interface to admin1
 tmp=`echo $DISPLAY`
 export DISPLAY=10.10.10.24:38.0
-python $PRESTO/python/ACCEL_sift.py > cands.txt
+python $\textbf{PRESTO}/python/ACCEL_sift.py > cands.txt
 export DISPLAY=$tmp
 #cd $tmp
 echo "Done. Candidate info saved in cands.txt."
@@ -245,10 +251,13 @@ do
 	datfilename="${accelfilename: 0:$length}"
 
 	#run prepfold command
-	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; nsub: $nsub \n"
+	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; 
+	    nsub: $nsub \n"
 	
 	#fold raw data
-	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.fits -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch -o ${filename}_${dmsarr[$i]} >> /dev/null
+	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.fits 
+	    -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch 
+	    -o ${filename}_${dmsarr[$i]} >> /dev/null
 
 done
 
@@ -263,7 +272,7 @@ echo -e "*************************************************************\n"
 #eog *.png
 
 ENDTIME="$(date -u +%s)"
-echo -e "Total time elapsed for processing $filename: $(($ENDTIME - $STARTTIME)) seconds.\n" 
+echo -e "Total time elapsed for processing $filename: $(($ENDTIME - $STARTTIME)) 
+    seconds.\n" 
 
 exit 0
-
