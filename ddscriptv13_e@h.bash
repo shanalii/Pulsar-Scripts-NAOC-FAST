@@ -1,15 +1,17 @@
 #!/bin/bash
-#A script to do de-dispersion on a single file, involving making a link to said file and running rfifind, DDplan.py, prepdata, and realfft on it.
+#A script to process a single file, involving making a link to said file and running 
+#rfifind, DDplan.py, prepdata, realfft, accelsearch, accelsift, and prepfold on it.
 #don't forget to do this on n04 -X! (BJ server)
 #modified for use on the GZNU server.
 
 #command line arguments are in the format: ddscript.bash directory filename
-#boolean to check whether or not everything is in the right format and if the directory and filename are valid
+#boolean to check whether or not everything is in the right format and if the 
+#directory and filename are valid
 
 STARTTIME="$(date -u +%s)"
 
 echo "*************************************************************"
-echo "PRESTO data processing"
+echo "\textbf{PRESTO} data processing"
 echo -e "by Shana Li\n"
 echo "Arguments should be in the format: directory filename."
 echo "Filename should be sans file extension (.sf)."
@@ -100,31 +102,31 @@ echo "Number of Channels: $numchan"
 echo "Total Bandwidth: $bandw"
 echo -e "Sample Time: $sampletime \n"
 
-DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r $tres -o $filename | tee ${filename}_ddplaninfo.txt >> /dev/null
+DDplan.py -l $ldm -d $hdm -f $cfreq -b $bandw -n $numchan -t $sampletime -r $tres 
+    -o $filename | tee ${filename}_ddplaninfo.txt >> /dev/null
 echo "Done."
 END="$(date -u +%s)"
 echo "End time: $END"
 echo "Time for DDplan: $(($END - $START)) seconds."
 echo -e "*************************************************************\n"
 
-
 echo "*************************************************************"
 #subband de-dispersion: call prepsubband on each call in DDplan
 #count the lines that contain the information for each call
+#ignore the last line in DDplan
 echo "Running subband de-dispersion:"
 START="$(date -u +%s)"
 echo -e "Start time: $START\n"
-numout=`readfile $filename.sf | grep "Spectra per file" | awk '{print $5}'`
 lastline=14
 line=`head -$lastline ${filename}_ddplaninfo.txt | tail -1`
 while [ "$line" != "" ]; do
 	((lastline++))
 	line=`head -$lastline ${filename}_ddplaninfo.txt | tail -1`
 done
-echo -e "Looping prepsubband for $(( $lastline-14 )) calls.\n"
+echo -e "Looping prepsubband for $(( $lastline-14-1 )) calls.\n"
 
 #loop prepsubband for all calls in ddplaninfo
-for (( i=14; i<lastline; i++ ))
+for (( i=14; i<lastline-1; i++ ))
 do
 	#get the call from the current line in the file
 	call=`head -$i ${filename}_ddplaninfo.txt | tail -1`
@@ -134,7 +136,7 @@ do
 
 	#get all the variables:
 	#nsub
-	nsub=`readfile $filename.sf | grep "samples per spectra" | awk '{print $5}'`
+	nsub=`readfile $filename.fits | grep "samples per spectra" | awk '{print $5}'`
 
 	#low dm
 	ldm=${arr[0]}
@@ -149,11 +151,13 @@ do
 	ds=${arr[3]}
 
 	#numout (numout from DDplan / downsamp)
-	numo=$(( $numout/$ds ))
+	numo=$(( $numout / $ds ))
 	
 	#run prepsubband command
-	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; Numout: $numo; Downsample: $ds"
-	prepsubband -lodm $ldm -dmstep $dms -numdms $ndm -numout $numo -downsamp $ds -mask ${filename}_rfifind.mask -o $filename $filename.sf >> /dev/null
+	echo "nsub: $nsub; Low DM: $ldm; DM step: $dms; Number of DMs: $ndm; Numout: $numo; 
+	    Downsample: $ds"
+	prepsubband -nsub $nsub -lodm $ldm -dmstep $dms -numdms $ndm -numout $numo -downsamp $ds 
+	    -mask ${filename}_rfifind.mask -o $filename $filename.fits >> /dev/null
 	echo -e "Done.\n"
 done
 END="$(date -u +%s)"
@@ -191,7 +195,7 @@ echo "*************************************************************"
 echo -e "Running ACCEL_sift.py:"
 START="$(date -u +%s)"
 echo -e "Start time: $START\n"
-python "$PRESTO/python/ACCEL_sift.py" | tee cands.txt >> /dev/null
+python "$\textbf{PRESTO}/python/ACCEL_sift.py" | tee cands.txt >> /dev/null
 echo "Done. Candidate info saved in cands.txt."
 END="$(date -u +%s)"
 echo "End time: $END"
@@ -239,10 +243,13 @@ do
 	datfilename="${accelfilename: 0:$length}"
 
 	#run prepfold command
-	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; nsub: $nsub \n"
+	echo -e "File: $datfilename; Candidate number: $candnum; DM: ${dmsarr[$i]}; 
+	    nsub: $nsub \n"
 	
 	#fold raw data
-	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.sf -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch -o ${filename}_${dmsarr[$i]} >> /dev/null
+	prepfold -mask ${filename}_rfifind.mask -dm ${dmsarr[$i]} $filename.sf 
+	    -accelfile $accelfilename.cand -accelcand $candnum -noxwin -nosearch 
+	    -o ${filename}_${dmsarr[$i]} >> /dev/null
 
 done
 
@@ -257,37 +264,7 @@ echo -e "*************************************************************\n"
 #eog *.png
 
 ENDTIME="$(date -u +%s)"
-echo -e "Total time elapsed for processing $filename: $(($ENDTIME - $STARTTIME)) seconds.\n"
-
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0026 PM0026_00511 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0058 PM0058_036D1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0109 PM0109_00331 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0001 PM0001_00161 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0038 PM0038_01821 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0042 PM0042_00391 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0137 PM0137_041B1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0125 PM0125_077C1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0039 PM0039_00551 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0056 PM0056_020B1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0035 PM0035_02931 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0085 PM0085_02541 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0054 PM0054_015A1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0102 PM0102_00591 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0002 PM0002_00891 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0141 PM0141_00971 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0137 PM0137_039B1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0149 PM0149_01081 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0011 PM0011_03231 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0148 PM0148_01971 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0132 PM0132_06271 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0140 PM0140_00641 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0060 PM0060_02061 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0143 PM0143_00511 & 
-
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0125 PM0125_077C1 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0085 PM0085_02541 & 
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0011 PM0011_03231 &
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0148 PM0148_01971 &
-#bash ../ddscriptv13.bash /home/pzc/pulsar_search/pmps/PM0132 PM0132_06271 & 
+echo -e "Total time elapsed for processing $filename: $(($ENDTIME - $STARTTIME)) 
+    seconds.\n"
 
 exit 0
